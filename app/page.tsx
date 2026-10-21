@@ -3,6 +3,7 @@
 import dynamic from 'next/dynamic';
 import { useEffect, useMemo, useState } from 'react';
 import { useStore } from '@/lib/store';
+import { kecamatanOptions, kelurahanOptions, matchArea } from '@/lib/area';
 import { formatDistance, googleMapsDirUrl, haversineKm } from '@/lib/geo';
 import { latestVisit, outletStatus, statusBadge, statusLabel } from '@/lib/visits';
 import VisitDialog from '@/components/VisitDialog';
@@ -40,6 +41,8 @@ export default function MapPage() {
   const [rayonF, setRayonF] = useState('all');
   const [salesF, setSalesF] = useState('all');
   const [catF, setCatF] = useState('all');
+  const [kecF, setKecF] = useState('all');
+  const [kelF, setKelF] = useState('all');
   const [q, setQ] = useState('');
   const [drawer, setDrawer] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -109,23 +112,27 @@ export default function MapPage() {
     [outlets, visits, userLoc]
   );
 
+  const areaActive = kecF !== 'all' || kelF !== 'all';
+
   const filtered = useMemo(
     () =>
       enriched
         .filter((o) => {
-          if (o.distanceKm === null || o.distanceKm > radiusKm) return false;
+          // Jika filter kecamatan/kelurahan dipilih, tampilkan semua outlet di wilayah itu (tanpa batas radius)
+          if (!areaActive && (o.distanceKm === null || o.distanceKm > radiusKm)) return false;
+          if (!matchArea(o, kecF, kelF)) return false;
           if (statusF !== 'all' && o.status !== statusF) return false;
           if (rayonF !== 'all' && o.rayon !== rayonF) return false;
           if (salesF !== 'all' && o.salesman !== salesF) return false;
           if (catF !== 'all' && o.category !== catF) return false;
           if (q) {
-            const s = `${o.name} ${o.address} ${o.outlet_code} ${o.city}`.toLowerCase();
+            const s = `${o.name} ${o.address} ${o.outlet_code} ${o.city} ${o.kelurahan} ${o.kecamatan}`.toLowerCase();
             if (!s.includes(q.toLowerCase())) return false;
           }
           return true;
         })
         .sort((a, b) => (a.distanceKm ?? 9e9) - (b.distanceKm ?? 9e9)),
-    [enriched, radiusKm, statusF, rayonF, salesF, catF, q]
+    [enriched, radiusKm, statusF, rayonF, salesF, catF, kecF, kelF, areaActive, q]
   );
 
   const uniq = (fn: (o: EnrichedOutlet) => string) =>
@@ -133,9 +140,11 @@ export default function MapPage() {
   const rayons = uniq((o) => o.rayon);
   const salesmen = uniq((o) => o.salesman);
   const cats = uniq((o) => o.category);
+  const kecOpts = useMemo(() => kecamatanOptions(outlets), [outlets]);
+  const kelOpts = useMemo(() => kelurahanOptions(outlets, kecF), [outlets, kecF]);
 
   const activeFilters =
-    (statusF !== 'all' ? 1 : 0) + (rayonF !== 'all' ? 1 : 0) + (salesF !== 'all' ? 1 : 0) + (catF !== 'all' ? 1 : 0);
+    (statusF !== 'all' ? 1 : 0) + (rayonF !== 'all' ? 1 : 0) + (salesF !== 'all' ? 1 : 0) + (catF !== 'all' ? 1 : 0) + (kecF !== 'all' ? 1 : 0) + (kelF !== 'all' ? 1 : 0);
 
   const selected = filtered.find((o) => o.id === selectedId) ?? null;
   const visitOutlet = outlets.find((o) => o.id === visitFor) ?? null;
@@ -248,9 +257,22 @@ export default function MapPage() {
             <option value="all">Semua kategori</option>
             {cats.map((c) => <option key={c} value={c}>{c}</option>)}
           </select>
+          <select value={kecF} onChange={(e) => { setKecF(e.target.value); setKelF('all'); }} className={selStyle}>
+            <option value="all">Semua kecamatan</option>
+            {kecOpts.map((k) => <option key={k.value} value={k.value}>{k.label}</option>)}
+          </select>
+          <select value={kelF} onChange={(e) => setKelF(e.target.value)} className={selStyle}>
+            <option value="all">Semua kelurahan</option>
+            {kelOpts.map((k) => <option key={k} value={k}>{k}</option>)}
+          </select>
+          {areaActive && (
+            <p className="col-span-full text-[11px] text-slate-500">
+              Filter wilayah aktif: menampilkan semua outlet di wilayah ini, tanpa batas radius.
+            </p>
+          )}
           {activeFilters > 0 && (
             <button
-              onClick={() => { setStatusF('all'); setRayonF('all'); setSalesF('all'); setCatF('all'); }}
+              onClick={() => { setStatusF('all'); setRayonF('all'); setSalesF('all'); setCatF('all'); setKecF('all'); setKelF('all'); }}
               className="col-span-full text-left text-xs font-semibold text-red-600"
             >
               ✕ Reset semua filter
@@ -267,6 +289,7 @@ export default function MapPage() {
             selectedId={selectedId}
             onSelect={(id) => setSelectedId(id === selectedId ? null : id)}
             heightClass="h-[52vh] lg:h-[70vh]"
+            fitKey={areaActive ? `${kecF}|${kelF}` : ''}
           />
           <div className="mt-2 flex flex-wrap gap-3 text-xs text-slate-500">
             <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full" style={{ background: '#ef4444' }} /> Belum dikunjungi</span>
@@ -306,6 +329,7 @@ export default function MapPage() {
                   <span className="rounded bg-slate-100 px-1.5 py-0.5">{o.rayon}</span>
                   {o.salesman && <span className="rounded bg-slate-100 px-1.5 py-0.5">{o.salesman}</span>}
                   {o.category && <span className="rounded bg-slate-100 px-1.5 py-0.5">{o.category}</span>}
+                  {o.kecamatan && <span className="rounded bg-slate-100 px-1.5 py-0.5">{o.kelurahan ? `${o.kelurahan}, ` : ''}{o.kecamatan}</span>}
                   <span className={`rounded px-1.5 py-0.5 font-medium ${statusBadge[o.status]}`}>
                     {statusLabel[o.status]}
                   </span>

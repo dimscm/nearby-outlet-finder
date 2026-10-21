@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { useStore } from '@/lib/store';
+import { kecamatanOptions, kelurahanOptions, matchArea } from '@/lib/area';
 import { outletStatus, statusBadge, statusLabel } from '@/lib/visits';
 import { downloadText, outletsToCsv } from '@/lib/csv';
 import Modal from '@/components/Modal';
@@ -18,6 +19,8 @@ export default function OutletsPage() {
   const [q, setQ] = useState('');
   const [rayonF, setRayonF] = useState('all');
   const [salesF, setSalesF] = useState('all');
+  const [kecF, setKecF] = useState('all');
+  const [kelF, setKelF] = useState('all');
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<Outlet | null>(null);
   const [showImport, setShowImport] = useState(false);
@@ -27,17 +30,20 @@ export default function OutletsPage() {
       outlets.filter((o) => {
         if (rayonF !== 'all' && o.rayon !== rayonF) return false;
         if (salesF !== 'all' && o.salesman !== salesF) return false;
+        if (!matchArea(o, kecF, kelF)) return false;
         if (q) {
           const s = `${o.name} ${o.address} ${o.outlet_code} ${o.city} ${o.kelurahan} ${o.kecamatan}`.toLowerCase();
           if (!s.includes(q.toLowerCase())) return false;
         }
         return true;
       }),
-    [outlets, q, rayonF, salesF]
+    [outlets, q, rayonF, salesF, kecF, kelF]
   );
 
   const rayons = Array.from(new Set(outlets.map((o) => o.rayon).filter(Boolean))).sort();
   const salesmen = Array.from(new Set(outlets.map((o) => o.salesman).filter(Boolean))).sort();
+  const kecOpts = useMemo(() => kecamatanOptions(outlets), [outlets]);
+  const kelOpts = useMemo(() => kelurahanOptions(outlets, kecF), [outlets, kecF]);
   const sel = 'rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-xs text-slate-700';
 
   return (
@@ -56,6 +62,14 @@ export default function OutletsPage() {
         <select value={salesF} onChange={(e) => setSalesF(e.target.value)} className={sel}>
           <option value="all">Semua salesman</option>
           {salesmen.map((s) => <option key={s} value={s}>{s}</option>)}
+        </select>
+        <select value={kecF} onChange={(e) => { setKecF(e.target.value); setKelF('all'); }} className={sel}>
+          <option value="all">Semua kecamatan</option>
+          {kecOpts.map((k) => <option key={k.value} value={k.value}>{k.label}</option>)}
+        </select>
+        <select value={kelF} onChange={(e) => setKelF(e.target.value)} className={sel}>
+          <option value="all">Semua kelurahan</option>
+          {kelOpts.map((k) => <option key={k} value={k}>{k}</option>)}
         </select>
         <button
           onClick={() => { setEditing(null); setShowForm(true); }}
@@ -92,6 +106,7 @@ export default function OutletsPage() {
                 <span className="rounded bg-slate-100 px-1.5 py-0.5">{o.rayon}</span>
                 {o.salesman && <span className="rounded bg-slate-100 px-1.5 py-0.5">{o.salesman}</span>}
                 {o.category && <span className="rounded bg-slate-100 px-1.5 py-0.5">{o.category}</span>}
+                {o.kecamatan && <span className="rounded bg-slate-100 px-1.5 py-0.5">{o.kelurahan ? `${o.kelurahan}, ` : ''}{o.kecamatan}</span>}
                 {!o.is_active && <span className="rounded bg-red-50 px-1.5 py-0.5 text-red-600">Nonaktif</span>}
               </div>
               <p className="mt-1 text-[10px] text-slate-400">

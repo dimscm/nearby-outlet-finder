@@ -20,6 +20,7 @@ interface Props {
   selectedId: string | null;
   onSelect: (id: string) => void;
   heightClass?: string;
+  fitKey?: string; // jika berubah (dan tidak kosong), peta di-zoom agar semua outlet terlihat
 }
 
 function dotIcon(color: string, highlight: boolean) {
@@ -54,6 +55,17 @@ function FlyToSelected({
   return null;
 }
 
+function FitToOutlets({ outlets, fitKey }: { outlets: MapOutlet[]; fitKey?: string }) {
+  const map = useMap();
+  useEffect(() => {
+    if (!fitKey || outlets.length === 0) return;
+    const b = L.latLngBounds(outlets.map((o) => [o.latitude, o.longitude] as [number, number]));
+    map.fitBounds(b, { padding: [30, 30], maxZoom: 16 });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fitKey, map]);
+  return null;
+}
+
 // Basemap OpenStreetMap — outlet yang dirender HANYA data internal database.
 export default function MapView({
   userLoc,
@@ -61,6 +73,7 @@ export default function MapView({
   selectedId,
   onSelect,
   heightClass = 'h-[52vh]',
+  fitKey,
 }: Props) {
   const center: [number, number] = userLoc ? [userLoc.lat, userLoc.lng] : [-6.2, 106.85];
   return (
@@ -84,6 +97,7 @@ export default function MapView({
         />
       ))}
       <FlyToSelected outlets={outlets} selectedId={selectedId} />
+      <FitToOutlets outlets={outlets} fitKey={fitKey} />
     </MapContainer>
   );
 }
