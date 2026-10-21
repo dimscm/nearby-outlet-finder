@@ -31,3 +31,13 @@ body {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
   white-space: nowrap;
 }
+
+/* Tombol di popup peta: warna teks link Leaflet ditimpa agar tetap putih */
+.leaflet-container a.nof-popup-btn,
+.leaflet-container a.nof-popup-btn:hover {
+  color: #ffffff;
+  text-decoration: none;
+}
+.leaflet-popup-content {
+  margin: 10px 12px;
+}

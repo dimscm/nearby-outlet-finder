@@ -46,6 +46,9 @@ export default function MapPage() {
   const [q, setQ] = useState('');
   const [drawer, setDrawer] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  // true = dipilih lewat klik titik di peta (popup sudah berisi Navigasi, kartu bawah disembunyikan di HP)
+  const [fromMap, setFromMap] = useState(false);
+  const [popupReq, setPopupReq] = useState<{ id: string; n: number } | null>(null);
   const [visitFor, setVisitFor] = useState<string | null>(null);
   const [manual, setManual] = useState({ lat: '', lng: '' });
   const [showManual, setShowManual] = useState(false);
@@ -295,8 +298,10 @@ export default function MapPage() {
           <MapView
             userLoc={userLoc}
             outlets={filtered}
+            onVisit={(id) => setVisitFor(id)}
+            popupFor={popupReq}
             selectedId={selectedId}
-            onSelect={(id) => setSelectedId(id === selectedId ? null : id)}
+            onSelect={(id) => { setFromMap(true); setSelectedId(id); }}
             heightClass="h-[52vh] lg:h-[70vh]"
             fitKey={ignoreRadius ? `${kecF}|${kelF}|${qDebounced}` : ''}
           />
@@ -326,7 +331,7 @@ export default function MapPage() {
             {filtered.map((o) => (
               <div
                 key={o.id}
-                onClick={() => setSelectedId(o.id === selectedId ? null : o.id)}
+                onClick={() => { setFromMap(false); setSelectedId(o.id === selectedId ? null : o.id); }}
                 className={`cursor-pointer rounded-xl border bg-white p-3 shadow-sm transition ${selectedId === o.id ? 'border-blue-500 ring-2 ring-blue-100' : 'border-slate-200 hover:border-blue-300'}`}
               >
                 <div className="flex items-start justify-between gap-2">
@@ -352,7 +357,7 @@ export default function MapPage() {
                 )}
                 <div className="mt-2 flex gap-1.5" onClick={(e) => e.stopPropagation()}>
                   <button
-                    onClick={() => setSelectedId(o.id)}
+                    onClick={(e) => { e.stopPropagation(); setFromMap(true); setSelectedId(o.id); setPopupReq((r) => ({ id: o.id, n: (r?.n ?? 0) + 1 })); }}
                     className="rounded-lg border border-slate-300 px-2.5 py-1 text-[11px] font-medium text-slate-600"
                   >
                     Lihat di Peta
@@ -380,7 +385,7 @@ export default function MapPage() {
 
       {/* Detail outlet terpilih */}
       {selected && (
-        <div className="fixed inset-x-0 bottom-14 z-40 mx-auto max-w-lg px-3 lg:static lg:z-auto lg:mx-0 lg:max-w-none lg:px-0">
+        <div className={`fixed inset-x-0 bottom-14 z-40 mx-auto max-w-lg px-3 ${fromMap ? 'hidden lg:block' : ''} lg:static lg:z-auto lg:mx-0 lg:max-w-none lg:px-0`}>
           <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xl">
             <div className="flex items-start justify-between">
               <div>

@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect } from 'react';
-import { MapContainer, Marker, TileLayer, Tooltip, useMap } from 'react-leaflet';
+import { useEffect, useRef } from 'react';
+import { MapContainer, Marker, Popup, TileLayer, Tooltip, useMap } from 'react-leaflet';
+import { googleMapsDirUrl } from '@/lib/geo';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { statusDot, VisitStatus } from '@/lib/visits';
@@ -12,6 +13,7 @@ export interface MapOutlet {
   latitude: number;
   longitude: number;
   status: VisitStatus;
+  address?: string;
 }
 
 interface Props {
@@ -20,6 +22,8 @@ interface Props {
   selectedId: string | null;
   onSelect: (id: string) => void;
   heightClass?: string;
+  onVisit?: (id: string) => void;
+  popupFor?: { id: string; n: number } | null; // buka popup titik ini (mis. dari tombol "Lihat di Peta")
   fitKey?: string; // jika berubah (dan tidak kosong), peta di-zoom agar semua outlet terlihat
 }
 
@@ -74,8 +78,16 @@ export default function MapView({
   onSelect,
   heightClass = 'h-[52vh]',
   fitKey,
+  onVisit,
+  popupFor,
 }: Props) {
   const showLabels = outlets.length <= 30;
+  const markerRefs = useRef(new Map<string, L.Marker>());
+  useEffect(() => {
+    if (!popupFor) return;
+    const t = setTimeout(() => markerRefs.current.get(popupFor.id)?.openPopup(), 550); // setelah animasi flyTo
+    return () => clearTimeout(t);
+  }, [popupFor]);
   const center: [number, number] = userLoc ? [userLoc.lat, userLoc.lng] : [-6.2, 106.85];
   return (
     <MapContainer
@@ -92,20 +104,54 @@ export default function MapView({
       {outlets.map((o) => (
         <Marker
           key={o.id}
+          ref={(m) => {
+            if (m) markerRefs.current.set(o.id, m);
+            else markerRefs.current.delete(o.id);
+          }}
           position={[o.latitude, o.longitude]}
           icon={dotIcon(statusDot[o.status], o.id === selectedId)}
-          eventHandlers={{ click: () => onSelect(o.id) }}
+          eventHandlers={{
+            click: () => onSelect(o.id),
+            popupopen: (e) => e.target.closeTooltip(),
+            popupclose: (e) => {
+              if (showLabels) e.target.openTooltip();
+            },
+          }}
         >
           {/* Nama toko: selalu tampil jika hasil sedikit, selain itu muncul saat disentuh/hover */}
           <Tooltip
-            key={`${showLabels}-${o.id === selectedId}`}
+            key={String(showLabels)}
             direction="top"
             offset={[0, -8]}
-            permanent={showLabels || o.id === selectedId}
+            permanent={showLabels}
             className="nof-label"
           >
             {o.name}
           </Tooltip>
+          <Popup offset={[0, -6]} autoPanPaddingTopLeft={[20, 60]} closeButton>
+            <div className="min-w-[190px] max-w-[240px]">
+              <p className="text-sm font-bold leading-tight text-slate-900">{o.name}</p>
+              {o.address && <p className="mt-1 text-xs leading-snug text-slate-600">{o.address}</p>}
+              <div className="mt-2 flex gap-1.5">
+                <a
+                  href={googleMapsDirUrl(o.latitude, o.longitude)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="nof-popup-btn flex-1 rounded-lg bg-green-600 px-2 py-1.5 text-center text-xs font-semibold"
+                >
+                  🧭 Navigasi
+                </a>
+                {onVisit && (
+                  <button
+                    onClick={() => onVisit(o.id)}
+                    className="flex-1 rounded-lg bg-blue-600 px-2 py-1.5 text-xs font-semibold text-white"
+                  >
+                    Catat Visit
+                  </button>
+                )}
+              </div>
+            </div>
+          </Popup>
         </Marker>
       ))}
       <FlyToSelected outlets={outlets} selectedId={selectedId} />
