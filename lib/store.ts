@@ -1,0 +1,78 @@
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
+import type { Outlet, UserLocation, Visit } from './types';
+
+interface AppState {
+  outlets: Outlet[];
+  visits: Visit[];
+  seeded: boolean;
+  userLocation: UserLocation | null;
+  setOutlets: (outlets: Outlet[]) => void;
+  upsertOutlet: (outlet: Outlet) => void;
+  deleteOutlet: (id: string) => void;
+  bulkAddOutlets: (outlets: Outlet[]) => number; // mengembalikan jumlah yg benar-benar ditambahkan (skip duplikat)
+  addVisit: (visit: Visit) => void;
+  setUserLocation: (loc: UserLocation | null) => void;
+  markSeeded: () => void;
+}
+
+function sameOutlet(a: Outlet, b: Outlet): boolean {
+  if (a.outlet_code && b.outlet_code && a.outlet_code === b.outlet_code) return true;
+  if (a.name.trim().toUpperCase() === b.name.trim().toUpperCase()) return true;
+  return (
+    Math.abs(a.latitude - b.latitude) < 0.00005 && Math.abs(a.longitude - b.longitude) < 0.00005
+  );
+}
+
+export const useStore = create<AppState>()(
+  persist(
+    (set, get) => ({
+      outlets: [],
+      visits: [],
+      seeded: false,
+      userLocation: null,
+
+      setOutlets: (outlets) => set({ outlets, seeded: true }),
+
+      upsertOutlet: (outlet) =>
+        set((s) => {
+          const idx = s.outlets.findIndex((o) => o.id === outlet.id);
+          const outlets = [...s.outlets];
+          if (idx >= 0) outlets[idx] = outlet;
+          else outlets.push(outlet);
+          return { outlets };
+        }),
+
+      deleteOutlet: (id) =>
+        set((s) => ({
+          outlets: s.outlets.filter((o) => o.id !== id),
+          visits: s.visits.filter((v) => v.outlet_id !== id),
+        })),
+
+      bulkAddOutlets: (incoming) => {
+        const existing = get().outlets;
+        const fresh: Outlet[] = [];
+        for (const o of incoming) {
+          const dup =
+            existing.some((e) => sameOutlet(e, o)) || fresh.some((e) => sameOutlet(e, o));
+          if (!dup) fresh.push(o);
+        }
+        if (fresh.length > 0) set((s) => ({ outlets: [...s.outlets, ...fresh] }));
+        return fresh.length;
+      },
+
+      addVisit: (visit) => set((s) => ({ visits: [...s.visits, visit] })),
+      setUserLocation: (loc) => set({ userLocation: loc }),
+      markSeeded: () => set({ seeded: true }),
+    }),
+    {
+      name: 'nof-store-v1', // persist di localStorage -> data tetap ada saat refresh
+      partialize: (s) => ({
+        outlets: s.outlets,
+        visits: s.visits,
+        seeded: s.seeded,
+        userLocation: s.userLocation,
+      }),
+    }
+  )
+);
