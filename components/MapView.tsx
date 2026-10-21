@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { MapContainer, Marker, TileLayer, useMap } from 'react-leaflet';
+import { MapContainer, Marker, TileLayer, Tooltip, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { statusDot, VisitStatus } from '@/lib/visits';
@@ -75,6 +75,7 @@ export default function MapView({
   heightClass = 'h-[52vh]',
   fitKey,
 }: Props) {
+  const showLabels = outlets.length <= 30;
   const center: [number, number] = userLoc ? [userLoc.lat, userLoc.lng] : [-6.2, 106.85];
   return (
     <MapContainer
@@ -94,7 +95,18 @@ export default function MapView({
           position={[o.latitude, o.longitude]}
           icon={dotIcon(statusDot[o.status], o.id === selectedId)}
           eventHandlers={{ click: () => onSelect(o.id) }}
-        />
+        >
+          {/* Nama toko: selalu tampil jika hasil sedikit, selain itu muncul saat disentuh/hover */}
+          <Tooltip
+            key={`${showLabels}-${o.id === selectedId}`}
+            direction="top"
+            offset={[0, -8]}
+            permanent={showLabels || o.id === selectedId}
+            className="nof-label"
+          >
+            {o.name}
+          </Tooltip>
+        </Marker>
       ))}
       <FlyToSelected outlets={outlets} selectedId={selectedId} />
       <FitToOutlets outlets={outlets} fitKey={fitKey} />

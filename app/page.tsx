@@ -113,26 +113,35 @@ export default function MapPage() {
   );
 
   const areaActive = kecF !== 'all' || kelF !== 'all';
+  // Pencarian teks mencari ke SEMUA outlet (tidak dibatasi radius / GPS)
+  const [qDebounced, setQDebounced] = useState('');
+  useEffect(() => {
+    const t = setTimeout(() => setQDebounced(q.trim()), 250);
+    return () => clearTimeout(t);
+  }, [q]);
+  const searchActive = qDebounced.length >= 2;
+  const ignoreRadius = areaActive || searchActive;
 
   const filtered = useMemo(
     () =>
       enriched
         .filter((o) => {
           // Jika filter kecamatan/kelurahan dipilih, tampilkan semua outlet di wilayah itu (tanpa batas radius)
-          if (!areaActive && (o.distanceKm === null || o.distanceKm > radiusKm)) return false;
+          if (!ignoreRadius && (o.distanceKm === null || o.distanceKm > radiusKm)) return false;
           if (!matchArea(o, kecF, kelF)) return false;
           if (statusF !== 'all' && o.status !== statusF) return false;
           if (rayonF !== 'all' && o.rayon !== rayonF) return false;
           if (salesF !== 'all' && o.salesman !== salesF) return false;
           if (catF !== 'all' && o.category !== catF) return false;
-          if (q) {
+          if (qDebounced) {
             const s = `${o.name} ${o.address} ${o.outlet_code} ${o.city} ${o.kelurahan} ${o.kecamatan}`.toLowerCase();
-            if (!s.includes(q.toLowerCase())) return false;
+            // semua kata harus ada (urutan bebas), mis. "jihan cibubur"
+            if (!qDebounced.toLowerCase().split(/\s+/).every((w) => s.includes(w))) return false;
           }
           return true;
         })
         .sort((a, b) => (a.distanceKm ?? 9e9) - (b.distanceKm ?? 9e9)),
-    [enriched, radiusKm, statusF, rayonF, salesF, catF, kecF, kelF, areaActive, q]
+    [enriched, radiusKm, statusF, rayonF, salesF, catF, kecF, kelF, ignoreRadius, qDebounced]
   );
 
   const uniq = (fn: (o: EnrichedOutlet) => string) =>
@@ -289,7 +298,7 @@ export default function MapPage() {
             selectedId={selectedId}
             onSelect={(id) => setSelectedId(id === selectedId ? null : id)}
             heightClass="h-[52vh] lg:h-[70vh]"
-            fitKey={areaActive ? `${kecF}|${kelF}` : ''}
+            fitKey={ignoreRadius ? `${kecF}|${kelF}|${qDebounced}` : ''}
           />
           <div className="mt-2 flex flex-wrap gap-3 text-xs text-slate-500">
             <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full" style={{ background: '#ef4444' }} /> Belum dikunjungi</span>
@@ -302,14 +311,16 @@ export default function MapPage() {
         <div className="lg:col-span-2">
           <div className="mb-2 flex items-center justify-between">
             <h2 className="text-sm font-semibold text-slate-900">
-              Outlet Terdekat ({filtered.length})
+              {searchActive ? `Hasil pencarian "${qDebounced}"` : areaActive ? 'Outlet di wilayah' : 'Outlet Terdekat'} ({filtered.length})
             </h2>
             {!userLoc && <span className="text-xs text-amber-600">Aktifkan GPS untuk melihat jarak</span>}
           </div>
           <div className="nof-scroll max-h-[52vh] space-y-2 overflow-y-auto pr-1 lg:max-h-[70vh]">
             {filtered.length === 0 && (
               <div className="rounded-xl border border-dashed border-slate-300 bg-white p-6 text-center text-sm text-slate-500">
-                Tidak ada outlet dalam radius {radiusKm} km{activeFilters > 0 ? ' dengan filter aktif' : ''}.
+                {searchActive
+                  ? `Tidak ada outlet yang cocok dengan "${qDebounced}"${activeFilters > 0 ? ' dengan filter aktif' : ''}.`
+                  : `Tidak ada outlet dalam radius ${radiusKm} km${activeFilters > 0 ? ' dengan filter aktif' : ''}.`}
               </div>
             )}
             {filtered.map((o) => (
