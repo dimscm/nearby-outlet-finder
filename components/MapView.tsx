@@ -94,7 +94,7 @@ export default function MapView({
       center={center}
       zoom={userLoc ? 14 : 11}
       scrollWheelZoom
-      className={`${heightClass} w-full rounded-xl border border-slate-200`}
+      className={`${heightClass} relative z-0 w-full rounded-xl border border-slate-200`}
     >
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'

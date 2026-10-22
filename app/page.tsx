@@ -32,6 +32,7 @@ export default function MapPage() {
   const userLoc = useStore((s) => s.userLocation);
   const setUserLoc = useStore((s) => s.setUserLocation);
   const addVisit = useStore((s) => s.addVisit);
+  const salesName = useStore((s) => s.salesName);
 
   const [gpsState, setGpsState] = useState<'idle' | 'loading' | 'ok' | 'error'>('idle');
   const [gpsError, setGpsError] = useState('');
@@ -433,9 +434,9 @@ export default function MapPage() {
       <VisitDialog
         open={visitFor !== null}
         outlet={visitOutlet}
-        defaultSales={visitOutlet?.salesman ?? ''}
+        defaultSales={salesName || visitOutlet?.salesman || ''}
         onClose={() => setVisitFor(null)}
-        onSave={(v: Visit) => addVisit(v)}
+        onSave={(v: Visit) => addVisit({ ...v, sales_lat: userLoc?.lat ?? null, sales_lng: userLoc?.lng ?? null })}
       />
     </div>
   );

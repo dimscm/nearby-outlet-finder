@@ -12,6 +12,9 @@ interface AppState {
   deleteOutlet: (id: string) => void;
   bulkAddOutlets: (outlets: Outlet[]) => number; // mengembalikan jumlah yg benar-benar ditambahkan (skip duplikat)
   addVisit: (visit: Visit) => void;
+  markVisitSynced: (id: string) => void;
+  salesName: string;
+  setSalesName: (name: string) => void;
   setUserLocation: (loc: UserLocation | null) => void;
   markSeeded: () => void;
 }
@@ -61,7 +64,11 @@ export const useStore = create<AppState>()(
         return fresh.length;
       },
 
-      addVisit: (visit) => set((s) => ({ visits: [...s.visits, visit] })),
+      addVisit: (visit) => set((s) => ({ visits: [...s.visits, visit], salesName: visit.sales_name })),
+      markVisitSynced: (id) =>
+        set((s) => ({ visits: s.visits.map((v) => (v.id === id ? { ...v, synced: true } : v)) })),
+      salesName: '',
+      setSalesName: (salesName) => set({ salesName }),
       setUserLocation: (loc) => set({ userLocation: loc }),
       markSeeded: () => set({ seeded: true }),
     }),
@@ -72,6 +79,7 @@ export const useStore = create<AppState>()(
         visits: s.visits,
         seeded: s.seeded,
         userLocation: s.userLocation,
+        salesName: s.salesName,
       }),
     }
   )

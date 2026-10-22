@@ -75,3 +75,14 @@ menggunakan koordinat untuk fitur pencarian radius.
 
 Jarak memakai rumus Haversine (radius bumi 6371 km). Verifikasi cepat: outlet pada koordinat yang
 sama dengan pengguna harus menampilkan **0 m**; geser 0,01° lintang ≈ 1,11 km.
+
+## Hasil kunjungan ke Google Sheet
+
+Setiap kunjungan yang dicatat dikirim otomatis ke Google Sheet (antrian offline: jika tidak ada sinyal,
+dikirim ulang saat online). Data yang dikirim: waktu, salesman, hasil, follow-up, catatan, data outlet,
+posisi GPS sales saat mencatat, dan jarak sales ke outlet (meter).
+
+1. Buat Google Sheet baru di Drive → **Extensions → Apps Script**.
+2. Ganti isi `Code.gs` dengan `google-apps-script/Code.gs`, simpan.
+3. **Deploy → New deployment → Web app**; Execute as: **Me**; Who has access: **Anyone** → Deploy, izinkan akses.
+4. Salin URL Web App (`https://script.google.com/macros/s/.../exec`) ke `SHEET_WEBHOOK_URL` di `lib/config.ts`, push.

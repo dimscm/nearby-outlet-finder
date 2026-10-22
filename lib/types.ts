@@ -29,6 +29,9 @@ export interface Visit {
   notes: string;
   follow_up_date: string; // YYYY-MM-DD, kosong jika bukan follow-up
   created_at: string;
+  sales_lat?: number | null; // posisi GPS sales saat mencatat (bukti kunjungan)
+  sales_lng?: number | null;
+  synced?: boolean; // sudah terkirim ke Google Sheet
 }
 
 export interface UserLocation {

@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { useStore } from '@/lib/store';
+import { syncEnabled } from '@/lib/sync';
 
 export default function VisitsPage() {
   const visits = useStore((s) => s.visits);
@@ -47,6 +48,11 @@ export default function VisitsPage() {
                 {o && ` · ${o.rayon}`}
               </p>
               {v.notes && <p className="mt-1 rounded-lg bg-slate-50 p-2 text-xs text-slate-600">{v.notes}</p>}
+              {syncEnabled() && (
+                <p className={`mt-1 text-[11px] font-medium ${v.synced ? 'text-green-700' : 'text-slate-400'}`}>
+                  {v.synced ? '✓ Terkirim ke Google Sheet' : '⏳ Menunggu dikirim ke Google Sheet (otomatis saat online)'}
+                </p>
+              )}
               {v.follow_up_date && (
                 <p className="mt-1 text-[11px] font-medium text-amber-700">📌 Follow-up: {v.follow_up_date}</p>
               )}

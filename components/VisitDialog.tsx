@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Modal from './Modal';
 import { uid, nowIso, toLocalInputValue } from '@/lib/id';
 import type { Outlet, Visit } from '@/lib/types';
@@ -20,6 +20,16 @@ export default function VisitDialog({ open, outlet, defaultSales, onClose, onSav
   const [notes, setNotes] = useState('');
   const [followUp, setFollowUp] = useState('');
   const [err, setErr] = useState('');
+
+  // Setiap membuka form untuk outlet lain: isi ulang nama sales & waktu sekarang
+  useEffect(() => {
+    if (!open) return;
+    setSales(defaultSales);
+    setTime(toLocalInputValue());
+    setStatus('sudah');
+    setErr('');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, outlet?.id]);
 
   if (!outlet) return null;
 
