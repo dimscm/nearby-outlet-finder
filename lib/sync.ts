@@ -4,8 +4,8 @@ import type { Outlet, Visit } from './types';
 
 export const syncEnabled = () => SHEET_WEBHOOK_URL.trim().length > 0;
 
-// Kirim satu kunjungan ke Google Sheet. Apps Script tidak mengirim header CORS,
-// jadi pakai mode no-cors (respons tidak bisa dibaca); gagal jaringan = lempar error.
+// Kirim satu kunjungan ke Google Sheet. Apps Script membalas {"ok":true} bila baris tersimpan;
+// selain itu dianggap gagal dan dicoba lagi nanti.
 export async function sendVisit(v: Visit, o: Outlet | undefined): Promise<void> {
   const dist =
     o && v.sales_lat != null && v.sales_lng != null
@@ -32,10 +32,11 @@ export async function sendVisit(v: Visit, o: Outlet | undefined): Promise<void> 
     lng_sales: v.sales_lng ?? '',
     jarak_sales_ke_outlet_m: dist,
   };
-  await fetch(SHEET_WEBHOOK_URL, {
+  const res = await fetch(SHEET_WEBHOOK_URL, {
     method: 'POST',
-    mode: 'no-cors',
     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
     body: JSON.stringify(payload),
   });
+  const data = (await res.json().catch(() => null)) as { ok?: boolean; error?: string } | null;
+  if (!res.ok || !data?.ok) throw new Error(data?.error || `Gagal kirim (HTTP ${res.status})`);
 }

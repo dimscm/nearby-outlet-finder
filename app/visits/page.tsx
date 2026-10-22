@@ -50,7 +50,7 @@ export default function VisitsPage() {
               {v.notes && <p className="mt-1 rounded-lg bg-slate-50 p-2 text-xs text-slate-600">{v.notes}</p>}
               {syncEnabled() && (
                 <p className={`mt-1 text-[11px] font-medium ${v.synced ? 'text-green-700' : 'text-slate-400'}`}>
-                  {v.synced ? '✓ Terkirim ke Google Sheet' : '⏳ Menunggu dikirim ke Google Sheet (otomatis saat online)'}
+                  {v.synced ? '✓ Terkirim ke Google Sheet' : '⏳ Belum terkirim ke Google Sheet (dicoba ulang otomatis)'}
                 </p>
               )}
               {v.follow_up_date && (
