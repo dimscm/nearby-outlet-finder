@@ -13,6 +13,7 @@ interface AppState {
   bulkAddOutlets: (outlets: Outlet[]) => number; // mengembalikan jumlah yg benar-benar ditambahkan (skip duplikat)
   addVisit: (visit: Visit) => void;
   markVisitSynced: (id: string) => void;
+  mergeRemoteVisits: (visits: Visit[]) => number;
   salesName: string;
   setSalesName: (name: string) => void;
   setUserLocation: (loc: UserLocation | null) => void;
@@ -65,6 +66,12 @@ export const useStore = create<AppState>()(
       },
 
       addVisit: (visit) => set((s) => ({ visits: [...s.visits, visit], salesName: visit.sales_name })),
+      mergeRemoteVisits: (incoming) => {
+        const have = new Set(get().visits.map((v) => v.id));
+        const fresh = incoming.filter((v) => !have.has(v.id));
+        if (fresh.length) set((s) => ({ visits: [...s.visits, ...fresh] }));
+        return fresh.length;
+      },
       markVisitSynced: (id) =>
         set((s) => ({ visits: s.visits.map((v) => (v.id === id ? { ...v, synced: true } : v)) })),
       salesName: '',
