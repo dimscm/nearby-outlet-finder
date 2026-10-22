@@ -2,6 +2,23 @@ import { SHEET_WEBHOOK_URL } from './config';
 import { haversineKm } from './geo';
 import type { Outlet, Visit } from './types';
 
+// Nama tab wilayah di Google Sheet, berdasarkan kota outlet
+export function areaTab(city: string): string {
+  const c = (city || '').toLowerCase();
+  if (c.includes('jakarta timur')) return 'JAKTIM';
+  if (c.includes('jakarta selatan')) return 'JAKSEL';
+  if (c.includes('jakarta utara')) return 'JAKUT';
+  if (c.includes('jakarta pusat')) return 'JAKPUS';
+  if (c.includes('jakarta barat')) return 'JAKBAR';
+  if (c.includes('bekasi')) return 'BEKASI';
+  if (c.includes('bogor')) return 'BOGOR';
+  if (c.includes('depok')) return 'DEPOK';
+  if (c.includes('tangerang selatan')) return 'TANGSEL';
+  if (c.includes('tangerang')) return 'TANGERANG';
+  if (c.includes('karawang')) return 'KARAWANG';
+  return 'LAINNYA';
+}
+
 export const syncEnabled = () => SHEET_WEBHOOK_URL.trim().length > 0;
 
 // Kirim satu kunjungan ke Google Sheet. Apps Script membalas {"ok":true} bila baris tersimpan;
@@ -12,6 +29,7 @@ export async function sendVisit(v: Visit, o: Outlet | undefined): Promise<void> 
       ? Math.round(haversineKm(v.sales_lat, v.sales_lng, o.latitude, o.longitude) * 1000)
       : '';
   const payload = {
+    area: areaTab(o?.city ?? ''),
     visit_id: v.id,
     waktu_kunjungan: v.visit_time,
     dicatat_pada: v.created_at,
