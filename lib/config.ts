@@ -2,4 +2,4 @@
 // Setiap kunjungan yang dicatat akan dikirim ke Google Sheet lewat URL ini.
 // Kosongkan untuk menonaktifkan pengiriman.
 export const SHEET_WEBHOOK_URL =
-  'https://script.google.com/macros/s/AKfycbwve_0HtPdvrRHodmHttYAhE75ayW3Jwtz6Lj6R0gmREbEzhyQg52pWsGKIJ9812QxC/exec';
+  'https://script.google.com/macros/s/AKfycbx-B3kCNL869pc2IoBEQh7lXaXPp-sxCYMJvXnXvMd3fRnjrul3JDIPtT6FOlCOIXqW/exec';
