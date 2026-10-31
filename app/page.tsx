@@ -3,6 +3,8 @@
 import dynamic from 'next/dynamic';
 import { useEffect, useMemo, useState } from 'react';
 import { useStore } from '@/lib/store';
+import { useAhs } from '@/lib/ahs';
+import NearestAhs from '@/components/NearestAhs';
 import { kecamatanOptions, kelurahanOptions, matchArea } from '@/lib/area';
 import { formatDistance, googleMapsDirUrl, haversineKm } from '@/lib/geo';
 import { latestVisit, outletStatus, statusBadge, statusLabel } from '@/lib/visits';
@@ -47,6 +49,24 @@ export default function MapPage() {
   const [q, setQ] = useState('');
   const [drawer, setDrawer] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  // Lapisan AHS: tampil/sembunyi diingat per perangkat
+  const ahs = useAhs();
+  const [showAhs, setShowAhs] = useState(true);
+  useEffect(() => {
+    try {
+      setShowAhs(localStorage.getItem('nof-show-ahs') !== '0');
+    } catch {
+      /* abaikan */
+    }
+  }, []);
+  const toggleAhs = (v: boolean) => {
+    setShowAhs(v);
+    try {
+      localStorage.setItem('nof-show-ahs', v ? '1' : '0');
+    } catch {
+      /* abaikan */
+    }
+  };
   // true = dipilih lewat klik titik di peta (popup sudah berisi Navigasi, kartu bawah disembunyikan di HP)
   const [fromMap, setFromMap] = useState(false);
   const [popupReq, setPopupReq] = useState<{ id: string; n: number } | null>(null);
@@ -301,12 +321,20 @@ export default function MapPage() {
             outlets={filtered}
             onVisit={(id) => setVisitFor(id)}
             popupFor={popupReq}
+            ahs={ahs}
+            showAhs={showAhs}
             selectedId={selectedId}
             onSelect={(id) => { setFromMap(true); setSelectedId(id); }}
             heightClass="h-[52vh] lg:h-[70vh]"
             fitKey={ignoreRadius ? `${kecF}|${kelF}|${qDebounced}` : ''}
           />
           <div className="mt-2 flex flex-wrap gap-3 text-xs text-slate-500">
+            {ahs.length > 0 && (
+              <label className="flex cursor-pointer items-center gap-1 font-semibold text-violet-700">
+                <input type="checkbox" checked={showAhs} onChange={(e) => toggleAhs(e.target.checked)} className="h-3.5 w-3.5 accent-violet-600" />
+                <span className="h-2.5 w-2.5 rounded-full" style={{ background: '#7c3aed' }} /> AHS ({ahs.length.toLocaleString('id-ID')})
+              </label>
+            )}
             <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full" style={{ background: '#ef4444' }} /> Belum dikunjungi</span>
             <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full" style={{ background: '#22c55e' }} /> Sudah dikunjungi</span>
             <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full" style={{ background: '#f59e0b' }} /> Follow-up</span>
@@ -405,6 +433,7 @@ export default function MapPage() {
               {selected.latitude.toFixed(5)}, {selected.longitude.toFixed(5)}
               {selected.outlet_code && ` · Kode: ${selected.outlet_code}`}
             </p>
+            {ahs.length > 0 && <NearestAhs lat={selected.latitude} lng={selected.longitude} ahs={ahs} n={3} />}
             {selected.lastVisit && (
               <p className="mt-2 rounded-lg bg-slate-50 p-2 text-[11px] text-slate-600">
                 <b>Riwayat terakhir:</b> {new Date(selected.lastVisit.visit_time).toLocaleString('id-ID')} — {selected.lastVisit.sales_name}

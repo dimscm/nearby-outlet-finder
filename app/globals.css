@@ -41,3 +41,16 @@ body {
 .leaflet-popup-content {
   margin: 10px 12px;
 }
+
+/* Link di popup peta & lapisan AHS */
+.leaflet-container a.nof-photo-link,
+.leaflet-container a.nof-photo-link:hover {
+  color: #334155;
+  text-decoration: none;
+}
+a.nof-link,
+.leaflet-container a.nof-link {
+  color: #6d28d9;
+  font-weight: 600;
+  text-decoration: none;
+}

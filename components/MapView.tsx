@@ -6,6 +6,9 @@ import { googleMapsDirUrl } from '@/lib/geo';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { statusDot, VisitStatus } from '@/lib/visits';
+import type { Ahs } from '@/lib/ahs';
+import AhsLayer from './AhsLayer';
+import NearestAhs from './NearestAhs';
 
 export interface MapOutlet {
   id: string;
@@ -24,6 +27,8 @@ interface Props {
   heightClass?: string;
   onVisit?: (id: string) => void;
   popupFor?: { id: string; n: number } | null; // buka popup titik ini (mis. dari tombol "Lihat di Peta")
+  ahs?: Ahs[]; // lapisan AHS (terpisah dari outlet)
+  showAhs?: boolean;
   fitKey?: string; // jika berubah (dan tidak kosong), peta di-zoom agar semua outlet terlihat
 }
 
@@ -80,6 +85,8 @@ export default function MapView({
   fitKey,
   onVisit,
   popupFor,
+  ahs,
+  showAhs,
 }: Props) {
   const showLabels = outlets.length <= 30;
   const markerRefs = useRef(new Map<string, L.Marker>());
@@ -150,10 +157,12 @@ export default function MapView({
                   </button>
                 )}
               </div>
+              {ahs && ahs.length > 0 && <NearestAhs lat={o.latitude} lng={o.longitude} ahs={ahs} n={1} />}
             </div>
           </Popup>
         </Marker>
       ))}
+      {showAhs && ahs && ahs.length > 0 && <AhsLayer ahs={ahs} />}
       <FlyToSelected outlets={outlets} selectedId={selectedId} />
       <FitToOutlets outlets={outlets} fitKey={fitKey} />
     </MapContainer>
