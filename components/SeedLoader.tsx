@@ -26,8 +26,8 @@ export default function SeedLoader() {
 
   // Pengguna lama: outlet seed di localStorage belum punya kecamatan/kelurahan → lengkapi dari seed terbaru
   useEffect(() => {
-    if (!seeded) return;
-    const missing = outlets.some((o) => o.id.startsWith('o-') && !o.kecamatan);
+    if (!useStore.getState().seeded) return;
+    const missing = useStore.getState().outlets.some((o) => o.id.startsWith('o-') && !o.kecamatan);
     if (!missing) return;
     fetch(`${process.env.NEXT_PUBLIC_BASE_PATH || ''}/seed-outlets.json`)
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error('seed tidak ditemukan'))))
@@ -50,7 +50,8 @@ export default function SeedLoader() {
   // bila ada AHS yang hilang (mis. tertimpa tab lain yang masih versi lama), ditambahkan lagi.
   // Outlet lama & riwayat kunjungan tidak diubah.
   useEffect(() => {
-    if (!seeded || outlets.length === 0) return;
+    const cur = useStore.getState();
+    if (!cur.seeded || cur.outlets.length === 0) return;
     loadAhsSeed().then((data) => {
       const st = useStore.getState();
       const have = new Set(st.outlets.map((o) => o.id));
@@ -61,8 +62,11 @@ export default function SeedLoader() {
   }, [seeded, outlets.length]);
 
   useEffect(() => {
-    if (seeded) return;
-    if (outlets.length > 0) {
+    // Baca state asli dari store (bukan nilai render pertama, yang saat hydration Next.js masih kosong).
+    // Tanpa ini, setiap buka halaman data tersimpan ditimpa ulang dengan seed bawaan.
+    const cur = useStore.getState();
+    if (seeded || cur.seeded) return;
+    if (outlets.length > 0 || cur.outlets.length > 0) {
       markSeeded();
       return;
     }
