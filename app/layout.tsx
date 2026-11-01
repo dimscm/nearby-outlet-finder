@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from 'next';
 import Link from 'next/link';
 import SeedLoader from '@/components/SeedLoader';
 import SyncManager from '@/components/SyncManager';
+import UpdateBanner from '@/components/UpdateBanner';
 
 export const metadata: Metadata = {
   title: 'Nearby Outlet Finder',
@@ -28,6 +29,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="min-h-screen bg-slate-50 text-slate-800 antialiased">
         <SeedLoader />
         <SyncManager />
+        <UpdateBanner />
         <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur">
           <div className="mx-auto flex h-12 max-w-7xl items-center justify-between px-3">
             <Link href="/" className="flex items-center gap-2 font-semibold text-slate-900">
