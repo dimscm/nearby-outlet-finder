@@ -54,3 +54,16 @@ a.nof-link,
   font-weight: 600;
   text-decoration: none;
 }
+
+/* Label data baru */
+.nof-new {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: #dc2626;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  vertical-align: 1px;
+}

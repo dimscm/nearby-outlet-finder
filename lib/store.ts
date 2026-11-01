@@ -15,6 +15,8 @@ interface AppState {
   markVisitSynced: (id: string) => void;
   mergeRemoteVisits: (visits: Visit[]) => number;
   salesName: string;
+  ahsSeeded: boolean; // data AHS baru sudah ditambahkan ke perangkat ini
+  markAhsSeeded: () => void;
   setSalesName: (name: string) => void;
   setUserLocation: (loc: UserLocation | null) => void;
   markSeeded: () => void;
@@ -75,6 +77,8 @@ export const useStore = create<AppState>()(
       markVisitSynced: (id) =>
         set((s) => ({ visits: s.visits.map((v) => (v.id === id ? { ...v, synced: true } : v)) })),
       salesName: '',
+      ahsSeeded: false,
+      markAhsSeeded: () => set({ ahsSeeded: true }),
       setSalesName: (salesName) => set({ salesName }),
       setUserLocation: (loc) => set({ userLocation: loc }),
       markSeeded: () => set({ seeded: true }),
@@ -87,6 +91,7 @@ export const useStore = create<AppState>()(
         seeded: s.seeded,
         userLocation: s.userLocation,
         salesName: s.salesName,
+        ahsSeeded: s.ahsSeeded,
       }),
     }
   )

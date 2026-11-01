@@ -6,9 +6,7 @@ import { googleMapsDirUrl } from '@/lib/geo';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { statusDot, VisitStatus } from '@/lib/visits';
-import type { Ahs } from '@/lib/ahs';
-import AhsLayer from './AhsLayer';
-import NearestAhs from './NearestAhs';
+
 
 export interface MapOutlet {
   id: string;
@@ -17,6 +15,7 @@ export interface MapOutlet {
   longitude: number;
   status: VisitStatus;
   address?: string;
+  is_new?: boolean;
 }
 
 interface Props {
@@ -27,8 +26,6 @@ interface Props {
   heightClass?: string;
   onVisit?: (id: string) => void;
   popupFor?: { id: string; n: number } | null; // buka popup titik ini (mis. dari tombol "Lihat di Peta")
-  ahs?: Ahs[]; // lapisan AHS (terpisah dari outlet)
-  showAhs?: boolean;
   fitKey?: string; // jika berubah (dan tidak kosong), peta di-zoom agar semua outlet terlihat
 }
 
@@ -85,8 +82,6 @@ export default function MapView({
   fitKey,
   onVisit,
   popupFor,
-  ahs,
-  showAhs,
 }: Props) {
   const showLabels = outlets.length <= 30;
   const markerRefs = useRef(new Map<string, L.Marker>());
@@ -137,7 +132,10 @@ export default function MapView({
           </Tooltip>
           <Popup offset={[0, -6]} autoPanPaddingTopLeft={[20, 60]} closeButton>
             <div className="min-w-[190px] max-w-[240px]">
-              <p className="text-sm font-bold leading-tight text-slate-900">{o.name}</p>
+              <p className="text-sm font-bold leading-tight text-slate-900">
+                {o.is_new && <span className="nof-new mr-1">NEW</span>}
+                {o.name}
+              </p>
               {o.address && <p className="mt-1 text-xs leading-snug text-slate-600">{o.address}</p>}
               <div className="mt-2 flex gap-1.5">
                 <a
@@ -157,12 +155,10 @@ export default function MapView({
                   </button>
                 )}
               </div>
-              {ahs && ahs.length > 0 && <NearestAhs lat={o.latitude} lng={o.longitude} ahs={ahs} n={1} />}
             </div>
           </Popup>
         </Marker>
       ))}
-      {showAhs && ahs && ahs.length > 0 && <AhsLayer ahs={ahs} />}
       <FlyToSelected outlets={outlets} selectedId={selectedId} />
       <FitToOutlets outlets={outlets} fitKey={fitKey} />
     </MapContainer>

@@ -96,7 +96,10 @@ export default function OutletsPage() {
           return (
             <div key={o.id} className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
               <div className="flex items-start justify-between gap-2">
-                <p className="text-sm font-semibold leading-tight text-slate-900">{o.name}</p>
+                <p className="text-sm font-semibold leading-tight text-slate-900">
+                  {o.is_new && <span className="nof-new mr-1">NEW</span>}
+                  {o.name}
+                </p>
                 <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${statusBadge[st]}`}>
                   {statusLabel[st]}
                 </span>

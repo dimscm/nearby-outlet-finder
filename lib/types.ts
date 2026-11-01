@@ -16,6 +16,8 @@ export interface Outlet {
   is_active: boolean;
   created_at: string;
   updated_at: string;
+  phone?: string; // No. HP (data AHS)
+  is_new?: boolean; // data baru (AHS Jakarta & Bekasi) → label NEW
 }
 
 export type OutletInput = Omit<Outlet, 'id' | 'created_at' | 'updated_at'>;

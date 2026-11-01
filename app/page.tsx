@@ -3,8 +3,7 @@
 import dynamic from 'next/dynamic';
 import { useEffect, useMemo, useState } from 'react';
 import { useStore } from '@/lib/store';
-import { useAhs } from '@/lib/ahs';
-import NearestAhs from '@/components/NearestAhs';
+import { telHref, waHref } from '@/lib/ahs';
 import { kecamatanOptions, kelurahanOptions, matchArea } from '@/lib/area';
 import { formatDistance, googleMapsDirUrl, haversineKm } from '@/lib/geo';
 import { latestVisit, outletStatus, statusBadge, statusLabel } from '@/lib/visits';
@@ -49,24 +48,6 @@ export default function MapPage() {
   const [q, setQ] = useState('');
   const [drawer, setDrawer] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  // Lapisan AHS: tampil/sembunyi diingat per perangkat
-  const ahs = useAhs();
-  const [showAhs, setShowAhs] = useState(true);
-  useEffect(() => {
-    try {
-      setShowAhs(localStorage.getItem('nof-show-ahs') !== '0');
-    } catch {
-      /* abaikan */
-    }
-  }, []);
-  const toggleAhs = (v: boolean) => {
-    setShowAhs(v);
-    try {
-      localStorage.setItem('nof-show-ahs', v ? '1' : '0');
-    } catch {
-      /* abaikan */
-    }
-  };
   // true = dipilih lewat klik titik di peta (popup sudah berisi Navigasi, kartu bawah disembunyikan di HP)
   const [fromMap, setFromMap] = useState(false);
   const [popupReq, setPopupReq] = useState<{ id: string; n: number } | null>(null);
@@ -321,20 +302,12 @@ export default function MapPage() {
             outlets={filtered}
             onVisit={(id) => setVisitFor(id)}
             popupFor={popupReq}
-            ahs={ahs}
-            showAhs={showAhs}
             selectedId={selectedId}
             onSelect={(id) => { setFromMap(true); setSelectedId(id); }}
             heightClass="h-[52vh] lg:h-[70vh]"
             fitKey={ignoreRadius ? `${kecF}|${kelF}|${qDebounced}` : ''}
           />
           <div className="mt-2 flex flex-wrap gap-3 text-xs text-slate-500">
-            {ahs.length > 0 && (
-              <label className="flex cursor-pointer items-center gap-1 font-semibold text-violet-700">
-                <input type="checkbox" checked={showAhs} onChange={(e) => toggleAhs(e.target.checked)} className="h-3.5 w-3.5 accent-violet-600" />
-                <span className="h-2.5 w-2.5 rounded-full" style={{ background: '#7c3aed' }} /> AHS ({ahs.length.toLocaleString('id-ID')})
-              </label>
-            )}
             <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full" style={{ background: '#ef4444' }} /> Belum dikunjungi</span>
             <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full" style={{ background: '#22c55e' }} /> Sudah dikunjungi</span>
             <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full" style={{ background: '#f59e0b' }} /> Follow-up</span>
@@ -364,7 +337,10 @@ export default function MapPage() {
                 className={`cursor-pointer rounded-xl border bg-white p-3 shadow-sm transition ${selectedId === o.id ? 'border-blue-500 ring-2 ring-blue-100' : 'border-slate-200 hover:border-blue-300'}`}
               >
                 <div className="flex items-start justify-between gap-2">
-                  <p className="text-sm font-semibold leading-tight text-slate-900">{o.name}</p>
+                  <p className="text-sm font-semibold leading-tight text-slate-900">
+                  {o.is_new && <span className="nof-new mr-1">NEW</span>}
+                  {o.name}
+                </p>
                   <span className="shrink-0 rounded-lg bg-blue-50 px-2 py-0.5 text-xs font-bold text-blue-700">
                     {o.distanceKm !== null ? formatDistance(o.distanceKm) : '—'}
                   </span>
@@ -418,7 +394,10 @@ export default function MapPage() {
           <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xl">
             <div className="flex items-start justify-between">
               <div>
-                <h3 className="text-sm font-bold text-slate-900">{selected.name}</h3>
+                <h3 className="text-sm font-bold text-slate-900">
+                  {selected.is_new && <span className="nof-new mr-1">NEW</span>}
+                  {selected.name}
+                </h3>
                 <p className="mt-0.5 text-xs text-slate-500">
                   {selected.distanceKm !== null && <span className="mr-2 font-semibold text-blue-700">{formatDistance(selected.distanceKm)}</span>}
                   {selected.rayon} · {selected.salesman || 'Tanpa salesman'}
@@ -433,7 +412,12 @@ export default function MapPage() {
               {selected.latitude.toFixed(5)}, {selected.longitude.toFixed(5)}
               {selected.outlet_code && ` · Kode: ${selected.outlet_code}`}
             </p>
-            {ahs.length > 0 && <NearestAhs lat={selected.latitude} lng={selected.longitude} ahs={ahs} n={3} />}
+            {selected.phone && (
+              <p className="mt-1 flex flex-wrap gap-x-3 text-xs">
+                <a className="nof-link" href={telHref(selected.phone)}>📞 {selected.phone}</a>
+                <a className="nof-link" href={waHref(selected.phone)} target="_blank" rel="noopener noreferrer">WhatsApp ↗</a>
+              </p>
+            )}
             {selected.lastVisit && (
               <p className="mt-2 rounded-lg bg-slate-50 p-2 text-[11px] text-slate-600">
                 <b>Riwayat terakhir:</b> {new Date(selected.lastVisit.visit_time).toLocaleString('id-ID')} — {selected.lastVisit.sales_name}

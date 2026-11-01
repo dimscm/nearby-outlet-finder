@@ -1,4 +1,4 @@
-"""Konversi AHS_Jakarta_Bekasi.xlsx -> public/ahs.json (lapisan AHS di peta, terpisah dari data outlet).
+"""Konversi AHS_Jakarta_Bekasi.xlsx -> scripts/ahs.json (bahan untuk scripts/build_ahs_outlets.py).
 
 Koordinat yang tertukar (latitude berisi 106.x, longitude berisi -6.x) dibetulkan otomatis;
 baris tanpa koordinat valid dilewati dan dilaporkan. Kota "BEKASI" ditentukan Kota/Kab. dari
@@ -67,8 +67,8 @@ for r in data[1:]:
                  round(float(lat), 7), round(float(lng), 7)])
 
 out = [dict(zip(["id", "name", "address", "phone", "kecamatan", "city", "latitude", "longitude"], r)) for r in rows]
-with open(ROOT / "public" / "ahs.json", "w", encoding="utf-8") as f:
+with open(ROOT / "scripts" / "ahs.json", "w", encoding="utf-8") as f:
     json.dump(out, f, ensure_ascii=False, separators=(",", ":"))
-print(f"{len(rows)} AHS ditulis ke public/ahs.json")
+print(f"{len(rows)} AHS ditulis ke scripts/ahs.json")
 print(f"koordinat tertukar dibetulkan ({len(fixed)}): {', '.join(fixed)}")
 print(f"dilewati, koordinat tidak valid ({len(skipped)}): {', '.join(skipped)}")

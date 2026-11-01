@@ -34,6 +34,23 @@ export default function SeedLoader() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [seeded]);
 
+  // Data baru: AHS Jakarta & Bekasi (public/seed-ahs.json) ditambahkan sekali ke data yang sudah ada,
+  // tanpa mengubah outlet lama maupun riwayat kunjungan.
+  const ahsSeeded = useStore((s) => s.ahsSeeded);
+  useEffect(() => {
+    if (!seeded || ahsSeeded || outlets.length === 0) return;
+    fetch(`${process.env.NEXT_PUBLIC_BASE_PATH || ''}/seed-ahs.json`)
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error('seed AHS tidak ditemukan'))))
+      .then((data: Outlet[]) => {
+        const st = useStore.getState();
+        const have = new Set(st.outlets.map((o) => o.id));
+        const fresh = (Array.isArray(data) ? data : []).filter((o) => !have.has(o.id));
+        if (fresh.length) st.setOutlets([...st.outlets, ...fresh]);
+        st.markAhsSeeded();
+      })
+      .catch(() => undefined);
+  }, [seeded, ahsSeeded, outlets.length]);
+
   useEffect(() => {
     if (seeded) return;
     if (outlets.length > 0) {
