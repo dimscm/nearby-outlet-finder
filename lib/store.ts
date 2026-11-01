@@ -96,3 +96,11 @@ export const useStore = create<AppState>()(
     }
   )
 );
+
+// Beberapa tab terbuka bersamaan: bila tab lain menyimpan perubahan, muat ulang state di tab ini
+// supaya tab yang data-nya lama tidak menimpa data terbaru.
+if (typeof window !== 'undefined') {
+  window.addEventListener('storage', (e) => {
+    if (e.key === 'nof-store-v1') void useStore.persist.rehydrate();
+  });
+}

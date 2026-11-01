@@ -6,6 +6,18 @@ import type { Outlet } from '@/lib/types';
 
 // Memuat seed-outlets.json (data hasil parsing file Excel asli) hanya sekali
 // saat database localStorage masih kosong.
+let ahsSeed: Promise<Outlet[]> | null = null;
+function loadAhsSeed(): Promise<Outlet[]> {
+  ahsSeed ??= fetch(`${process.env.NEXT_PUBLIC_BASE_PATH || ''}/seed-ahs.json`)
+    .then((r) => (r.ok ? r.json() : []))
+    .then((d) => (Array.isArray(d) ? d : []))
+    .catch(() => {
+      ahsSeed = null; // coba lagi lain kali
+      return [];
+    });
+  return ahsSeed;
+}
+
 export default function SeedLoader() {
   const seeded = useStore((s) => s.seeded);
   const outlets = useStore((s) => s.outlets);
@@ -34,22 +46,19 @@ export default function SeedLoader() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [seeded]);
 
-  // Data baru: AHS Jakarta & Bekasi (public/seed-ahs.json) ditambahkan sekali ke data yang sudah ada,
-  // tanpa mengubah outlet lama maupun riwayat kunjungan.
-  const ahsSeeded = useStore((s) => s.ahsSeeded);
+  // Data baru: AHS Jakarta & Bekasi (public/seed-ahs.json). Dicek setiap kali daftar outlet berubah:
+  // bila ada AHS yang hilang (mis. tertimpa tab lain yang masih versi lama), ditambahkan lagi.
+  // Outlet lama & riwayat kunjungan tidak diubah.
   useEffect(() => {
-    if (!seeded || ahsSeeded || outlets.length === 0) return;
-    fetch(`${process.env.NEXT_PUBLIC_BASE_PATH || ''}/seed-ahs.json`)
-      .then((r) => (r.ok ? r.json() : Promise.reject(new Error('seed AHS tidak ditemukan'))))
-      .then((data: Outlet[]) => {
-        const st = useStore.getState();
-        const have = new Set(st.outlets.map((o) => o.id));
-        const fresh = (Array.isArray(data) ? data : []).filter((o) => !have.has(o.id));
-        if (fresh.length) st.setOutlets([...st.outlets, ...fresh]);
-        st.markAhsSeeded();
-      })
-      .catch(() => undefined);
-  }, [seeded, ahsSeeded, outlets.length]);
+    if (!seeded || outlets.length === 0) return;
+    loadAhsSeed().then((data) => {
+      const st = useStore.getState();
+      const have = new Set(st.outlets.map((o) => o.id));
+      const missing = data.filter((o) => !have.has(o.id));
+      if (missing.length) st.setOutlets([...st.outlets, ...missing]);
+      if (!st.ahsSeeded) st.markAhsSeeded();
+    });
+  }, [seeded, outlets.length]);
 
   useEffect(() => {
     if (seeded) return;
