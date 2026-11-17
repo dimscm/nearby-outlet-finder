@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Modal from './Modal';
 import { uid, nowIso, toLocalInputValue } from '@/lib/id';
 import type { Outlet, Visit } from '@/lib/types';
+import { ALASAN, HASIL } from '@/lib/hasil';
 
 interface Props {
   open: boolean;
@@ -13,10 +14,18 @@ interface Props {
   onSave: (visit: Visit) => void;
 }
 
+const HASIL_ON: Record<string, string> = {
+  'Deal NOO': 'border-green-600 bg-green-600 text-white',
+  'CB salesman': 'border-blue-600 bg-blue-600 text-white',
+  'Tidak mau CB': 'border-red-600 bg-red-600 text-white',
+  'Perlu follow-up': 'border-amber-500 bg-amber-500 text-white',
+};
+
 export default function VisitDialog({ open, outlet, defaultSales, onClose, onSave }: Props) {
   const [sales, setSales] = useState(defaultSales);
   const [time, setTime] = useState(toLocalInputValue());
-  const [status, setStatus] = useState<'sudah' | 'followup'>('sudah');
+  const [hasil, setHasil] = useState('');
+  const [alasan, setAlasan] = useState('');
   const [notes, setNotes] = useState('');
   const [followUp, setFollowUp] = useState('');
   const [err, setErr] = useState('');
@@ -26,12 +35,17 @@ export default function VisitDialog({ open, outlet, defaultSales, onClose, onSav
     if (!open) return;
     setSales(defaultSales);
     setTime(toLocalInputValue());
-    setStatus('sudah');
+    setHasil('');
+    setAlasan('');
+    setNotes('');
+    setFollowUp('');
     setErr('');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, outlet?.id]);
 
   if (!outlet) return null;
+
+  const status: 'sudah' | 'followup' = hasil === 'Perlu follow-up' ? 'followup' : 'sudah';
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -40,8 +54,20 @@ export default function VisitDialog({ open, outlet, defaultSales, onClose, onSav
       setErr('Nama sales wajib diisi.');
       return;
     }
+    if (!hasil) {
+      setErr('Pilih hasil kunjungan.');
+      return;
+    }
+    if (hasil === 'Tidak mau CB' && !alasan) {
+      setErr('Pilih alasan tidak mau CB.');
+      return;
+    }
+    if (hasil === 'Tidak mau CB' && alasan === 'Lainnya' && notes.trim().length < 3) {
+      setErr('Alasan "Lainnya": tulis alasannya di catatan.');
+      return;
+    }
     if (status === 'followup' && !followUp) {
-      setErr('Tanggal follow-up wajib diisi untuk status Perlu follow-up.');
+      setErr('Tanggal follow-up wajib diisi untuk Perlu follow-up.');
       return;
     }
     setErr('');
@@ -54,6 +80,8 @@ export default function VisitDialog({ open, outlet, defaultSales, onClose, onSav
       visit_status: status,
       notes: notes.trim(),
       follow_up_date: status === 'followup' ? followUp : '',
+      hasil,
+      alasan: hasil === 'Tidak mau CB' ? alasan : '',
       created_at: nowIso(),
     });
     setNotes('');
@@ -83,16 +111,43 @@ export default function VisitDialog({ open, outlet, defaultSales, onClose, onSav
           />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-600">Hasil Visit</label>
-          <select
-            value={status}
-            onChange={(e) => setStatus(e.target.value as 'sudah' | 'followup')}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-          >
-            <option value="sudah">Sudah dikunjungi</option>
-            <option value="followup">Perlu follow-up</option>
-          </select>
+          <label className="mb-1 block text-xs font-medium text-slate-600">Hasil Kunjungan</label>
+          <div className="grid grid-cols-2 gap-2">
+            {HASIL.map((h) => (
+              <button
+                key={h}
+                type="button"
+                onClick={() => {
+                  setHasil(h);
+                  setErr('');
+                }}
+                className={`rounded-xl border px-3 py-2.5 text-sm font-semibold ${
+                  hasil === h ? HASIL_ON[h] : 'border-slate-300 bg-white text-slate-700'
+                }`}
+              >
+                {h}
+              </button>
+            ))}
+          </div>
         </div>
+        {hasil === 'Tidak mau CB' && (
+          <div>
+            <label className="mb-1 block text-xs font-medium text-slate-600">Alasan Tidak Mau CB</label>
+            <select
+              value={alasan}
+              onChange={(e) => {
+                setAlasan(e.target.value);
+                setErr('');
+              }}
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+            >
+              <option value="">— pilih alasan —</option>
+              {ALASAN.map((a) => (
+                <option key={a}>{a}</option>
+              ))}
+            </select>
+          </div>
+        )}
         {status === 'followup' && (
           <div>
             <label className="mb-1 block text-xs font-medium text-slate-600">Tanggal Follow-up</label>
@@ -105,13 +160,15 @@ export default function VisitDialog({ open, outlet, defaultSales, onClose, onSav
           </div>
         )}
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-600">Catatan</label>
+          <label className="mb-1 block text-xs font-medium text-slate-600">
+            {hasil === 'Tidak mau CB' && alasan === 'Lainnya' ? 'Tulis alasannya' : 'Catatan tambahan (opsional)'}
+          </label>
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            rows={3}
+            rows={2}
             className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-            placeholder="Hasil kunjungan, pesanan, kendala…"
+            placeholder="mis. minta dihubungi minggu depan"
           />
         </div>
         {err && <p className="text-sm text-red-600">{err}</p>}

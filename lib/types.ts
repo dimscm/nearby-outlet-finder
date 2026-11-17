@@ -34,6 +34,8 @@ export interface Visit {
   sales_lat?: number | null; // posisi GPS sales saat mencatat (bukti kunjungan)
   sales_lng?: number | null;
   synced?: boolean; // sudah terkirim ke Google Sheet
+  hasil?: string; // Deal NOO / CB salesman / Tidak mau CB / Perlu follow-up (kosong = data lama)
+  alasan?: string; // alasan bila Tidak mau CB
 }
 
 export interface UserLocation {

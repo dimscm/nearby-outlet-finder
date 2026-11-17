@@ -4,6 +4,7 @@ import { useMemo } from 'react';
 import { useStore } from '@/lib/store';
 import { haversineKm } from '@/lib/geo';
 import { outletStatus, statusBadge, statusLabel } from '@/lib/visits';
+import VisitProgress from '@/components/VisitProgress';
 
 export default function DashboardPage() {
   const outlets = useStore((s) => s.outlets);
@@ -69,6 +70,8 @@ export default function DashboardPage() {
           </div>
         ))}
       </div>
+
+      <VisitProgress outlets={outlets} visits={visits} />
 
       <div className="grid gap-4 lg:grid-cols-2">
         <div>

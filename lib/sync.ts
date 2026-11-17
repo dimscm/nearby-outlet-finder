@@ -1,5 +1,6 @@
 import { SHEET_WEBHOOK_URL } from './config';
 import { haversineKm } from './geo';
+import { hasilText, parseHasil } from './hasil';
 import type { Outlet, Visit } from './types';
 
 // Nama tab wilayah di Google Sheet, berdasarkan kota outlet
@@ -35,7 +36,7 @@ export async function sendVisit(v: Visit, o: Outlet | undefined): Promise<void> 
     waktu_kunjungan: v.visit_time,
     dicatat_pada: v.created_at,
     salesman: v.sales_name,
-    hasil: v.visit_status === 'followup' ? 'Perlu follow-up' : 'Sudah dikunjungi',
+    hasil: hasilText(v),
     tanggal_follow_up: v.follow_up_date,
     catatan: v.notes,
     kode_outlet: o?.outlet_code ?? '',
@@ -100,6 +101,7 @@ export function remoteToVisits(remote: RemoteVisit[], outlets: Outlet[]): Visit[
       sales_name: r.sales_name,
       visit_time: t.toISOString(),
       visit_status: /follow/i.test(r.hasil) ? 'followup' : 'sudah',
+      ...parseHasil(r.hasil),
       notes: r.notes,
       follow_up_date: r.follow_up_date,
       created_at: t.toISOString(),

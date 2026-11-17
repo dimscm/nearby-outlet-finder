@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import { useStore } from '@/lib/store';
 import { syncEnabled } from '@/lib/sync';
+import { hasilBadge } from '@/lib/hasil';
 
 export default function VisitsPage() {
   const visits = useStore((s) => s.visits);
@@ -39,14 +40,17 @@ export default function VisitsPage() {
             <div key={v.id} className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
               <div className="flex items-start justify-between gap-2">
                 <p className="text-sm font-semibold text-slate-900">{o?.name ?? '(outlet terhapus)'}</p>
-                <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${v.visit_status === 'followup' ? 'bg-amber-100 text-amber-700' : 'bg-green-100 text-green-700'}`}>
-                  {v.visit_status === 'followup' ? 'Perlu follow-up' : 'Sudah dikunjungi'}
+                <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${
+                  v.hasil ? hasilBadge[v.hasil] : v.visit_status === 'followup' ? 'bg-amber-100 text-amber-700' : 'bg-green-100 text-green-700'
+                }`}>
+                  {v.hasil || (v.visit_status === 'followup' ? 'Perlu follow-up' : 'Sudah dikunjungi')}
                 </span>
               </div>
               <p className="mt-1 text-xs text-slate-500">
                 {new Date(v.visit_time).toLocaleString('id-ID')} · {v.sales_name}
                 {o && ` · ${o.rayon}`}
               </p>
+              {v.alasan && <p className="mt-1 text-xs font-medium text-red-700">Alasan: {v.alasan}</p>}
               {v.notes && <p className="mt-1 rounded-lg bg-slate-50 p-2 text-xs text-slate-600">{v.notes}</p>}
               {syncEnabled() && (
                 <p className={`mt-1 text-[11px] font-medium ${v.synced ? 'text-green-700' : 'text-slate-400'}`}>
