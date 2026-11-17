@@ -80,23 +80,19 @@ export default function VisitProgress({ outlets, visits }: { outlets: Outlet[]; 
   const sel = 'rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-xs';
   const line = (name: string, r: Row, strong = false) => (
     <tr key={name} className={strong ? 'bg-blue-50 font-bold' : 'border-t border-slate-100'}>
-      <td className="max-w-[180px] truncate py-1.5 pr-2" title={name}>{name}</td>
+      <td className="max-w-[120px] truncate py-1.5 pr-2 sm:max-w-[260px]" title={name}>{name}</td>
       <td className="px-2 text-right tabular-nums">{r.n.toLocaleString('id-ID')}</td>
       <td className="px-2 text-right tabular-nums text-green-700">{r.sudah.toLocaleString('id-ID')}</td>
       <td className="px-2 text-right tabular-nums text-red-600">{(r.n - r.sudah).toLocaleString('id-ID')}</td>
       <td className="px-2">
         <div className="flex items-center gap-1.5">
-          <div className="h-2 w-16 overflow-hidden rounded-full bg-slate-200">
+          <div className="hidden h-2 w-16 overflow-hidden rounded-full bg-slate-200 sm:block">
             <div className="h-full bg-green-500" style={{ width: `${pct(r.sudah, r.n)}%` }} />
           </div>
           <span className="tabular-nums">{pct(r.sudah, r.n)}%</span>
         </div>
       </td>
       <td className="px-2 text-right tabular-nums">{pct(r.n - r.sudah, r.n)}%</td>
-      <td className="px-2 text-right tabular-nums">{r.noo || ''}</td>
-      <td className="px-2 text-right tabular-nums">{r.cb || ''}</td>
-      <td className="px-2 text-right tabular-nums">{r.tidak || ''}</td>
-      <td className="px-2 text-right tabular-nums">{r.fu || ''}</td>
     </tr>
   );
 
@@ -132,23 +128,19 @@ export default function VisitProgress({ outlets, visits }: { outlets: Outlet[]; 
       </div>
 
       <div className="max-h-[480px] overflow-auto rounded-xl border border-slate-200 bg-white">
-        <table className="w-full min-w-[720px] text-xs">
+        <table className="w-full text-xs">
           <thead className="sticky top-0 bg-slate-50 text-[11px] text-slate-500">
             <tr>
               <th className="py-2 pl-3 pr-2 text-left">{LEVELS.find((l) => l.v === level)?.label}</th>
-              <th className="px-2 text-right">Outlet</th>
-              <th className="px-2 text-right">Sudah</th>
-              <th className="px-2 text-right">Belum</th>
-              <th className="px-2 text-left">% didatangi</th>
-              <th className="px-2 text-right">% belum</th>
-              <th className="px-2 text-right">Deal NOO</th>
-              <th className="px-2 text-right">CB salesman</th>
-              <th className="px-2 text-right">Tidak mau CB</th>
-              <th className="px-2 text-right">Follow-up</th>
+              <th className="px-1 sm:px-2 text-right">Outlet</th>
+              <th className="px-1 sm:px-2 text-right">Sudah</th>
+              <th className="px-1 sm:px-2 text-right">Belum</th>
+              <th className="px-1 sm:px-2 text-left">% sudah</th>
+              <th className="px-1 sm:px-2 text-right">% belum</th>
             </tr>
           </thead>
           <tbody className="[&_td:first-child]:pl-3 [&_th:first-child]:pl-3">
-            {line(kota === 'all' ? 'Total seluruh Jabotabek' : `Total ${kota}`, total, true)}
+            {line('Total', total, true)}
             {rows.map(([k, r]) => line(k, r))}
           </tbody>
         </table>
@@ -169,12 +161,6 @@ export default function VisitProgress({ outlets, visits }: { outlets: Outlet[]; 
             ))}
           </div>
         </div>
-      )}
-      {total.sudah > total.noo + total.cb + total.tidak + total.fu && (
-        <p className="text-[11px] text-slate-500">
-          {(total.sudah - total.noo - total.cb - total.tidak - total.fu).toLocaleString('id-ID')} outlet sudah didatangi
-          sebelum pilihan hasil ada (data lama), jadi tidak masuk kolom hasil.
-        </p>
       )}
     </section>
   );
