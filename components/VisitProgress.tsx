@@ -3,12 +3,11 @@
 import { useMemo, useState } from 'react';
 import type { Outlet, Visit } from '@/lib/types';
 
-type Level = 'city' | 'kecamatan' | 'kelurahan' | 'rayon';
+type Level = 'city' | 'kecamatan' | 'kelurahan';
 const LEVELS: { v: Level; label: string }[] = [
   { v: 'city', label: 'Kota' },
   { v: 'kecamatan', label: 'Kecamatan' },
   { v: 'kelurahan', label: 'Kelurahan' },
-  { v: 'rayon', label: 'Rayon' },
 ];
 
 interface Row {
@@ -22,7 +21,7 @@ interface Row {
 const blank = (): Row => ({ n: 0, sudah: 0, noo: 0, cb: 0, tidak: 0, fu: 0 });
 const pct = (a: number, n: number) => (n ? Math.round((a / n) * 1000) / 10 : 0);
 
-// Rangkuman progres kunjungan: seluruh Jabotabek + per kota/kecamatan/kelurahan/rayon
+// Rangkuman progres kunjungan: seluruh Jabotabek + per kota/kecamatan/kelurahan
 export default function VisitProgress({ outlets, visits }: { outlets: Outlet[]; visits: Visit[] }) {
   const [level, setLevel] = useState<Level>('kecamatan');
   const [kota, setKota] = useState('all');
